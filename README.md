@@ -16,3 +16,40 @@ These objects can then be serialized to JSON, written to HAR files, and imported
 
 ```bash
 npm install cdp-har-builder
+```
+## Basic usage
+
+```typescript
+import { writeFile } from "node:fs/promises";
+import {
+    CdpNetworkRecorder,
+    CdpTrafficInterceptor,
+    HarBuilder,
+} from "cdp-har-builder";
+
+// `cdpSession` is any CDP-compatible session with:
+// send(method, params)
+// on(event, handler)
+// off(event, handler) optional
+
+const recorder = new CdpNetworkRecorder();
+const interceptor = new CdpTrafficInterceptor(cdpSession, recorder);
+
+await interceptor.subscribe();
+interceptor.acceptNewRequests();
+
+// ...
+
+// discard new requests when you're ready to export data
+interceptor.discardNewRequests();
+// give pending requests some time to complete
+await recorder.waitForPendingRequests();
+
+const har = new HarBuilder().build(recorder.getCompletedRequests());
+
+await writeFile(
+    "network.har",
+    JSON.stringify(har, null, 2),
+    "utf-8",
+);
+```
