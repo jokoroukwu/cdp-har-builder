@@ -31,5 +31,13 @@
   "license": "MIT",
   "devDependencies": {
     "typescript": "^6.0.3"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/jokoroukwu/cdp-har-builder.git"
+  },
+  "homepage": "https://github.com/jokoroukwu/cdp-har-builder",
+  "bugs": {
+    "url": "https://github.com/jokoroukwu/cdp-har-builder/issues"
   }
 }
