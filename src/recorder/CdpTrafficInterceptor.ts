@@ -10,15 +10,17 @@ import type {
     GetResponseBody
 } from "./CdpNetworkTypes.js";
 
+export type EventHandler = (payload: any) => void
 
-export type CdpSession = {
-    send(method: string, params?: object): Promise<any>
-    on(event: string, handler: (payload: any) => void): void
-    off?(event: string, handler: (payload: any) => void): void
-    detach?(): Promise<void>
+export interface CdpSession {
+    send(method: string, params?: object): Promise<any>;
+
+    on(event: string, handler: EventHandler): void;
+
+    off(event: string, handler: EventHandler): void;
 }
 
-export interface EventHandler {
+export interface CdpEventHandler {
     onRequestWillBeSent(event: CdpRequestWillBeSentEvent): void;
 
     onResponseReceived(event: CdpResponseReceivedEvent): void;
@@ -40,57 +42,90 @@ export interface EventHandler {
 
 export class CdpTrafficInterceptor {
     private shouldAcceptNewRequests: boolean = false;
+    private subscribed: boolean = false;
 
     constructor(
         private readonly client: CdpSession,
-        private readonly eventHandler: EventHandler,
+        private readonly cdpEventHandler: CdpEventHandler,
     ) {
     }
 
-    async subscribe(): Promise<void> {
-        await this.client.send("Network.enable");
+    private readonly onRequestWillBeSent: EventHandler = (event) => {
+        if (this.shouldAcceptNewRequests) {
+            this.cdpEventHandler.onRequestWillBeSent(event);
+        }
+    };
 
-        this.client.on("Network.requestWillBeSent", (event) => {
-            if (this.shouldAcceptNewRequests) {
-                this.eventHandler.onRequestWillBeSent(event);
-            }
-        });
+    private readonly onResponseReceived: EventHandler = (event) => {
+        this.cdpEventHandler.onResponseReceived(event);
+    };
 
-        this.client.on("Network.responseReceived", (event) => {
-            this.eventHandler.onResponseReceived(event);
+    private readonly onLoadingFinished: EventHandler = (event) => {
+        this.cdpEventHandler.onLoadingFinished(event, (params) => {
+            return this.client.send("Network.getResponseBody", params);
         });
+    };
 
-        this.client.on("Network.loadingFinished", (event) => {
-            this.eventHandler.onLoadingFinished(event, (params) => {
-                return this.client.send("Network.getResponseBody", params);
-            });
-        });
+    private readonly onLoadingFailed: EventHandler = (event) => {
+        this.cdpEventHandler.onLoadingFailed(event);
+    };
 
-        this.client.on("Network.loadingFailed", (event) => {
-            this.eventHandler.onLoadingFailed(event);
-        });
+    private readonly onWebSocketCreated: EventHandler = (event) => {
+        if (this.shouldAcceptNewRequests) {
+            this.cdpEventHandler.onWebSocketCreated(event);
+        }
+    };
 
-        this.client.on("Network.webSocketCreated", (event) => {
-            if (this.shouldAcceptNewRequests) {
-                this.eventHandler.onWebSocketCreated(event);
-            }
-        });
+    private readonly onWebSocketWillSendHandshakeRequest: EventHandler = (event) => {
+        this.cdpEventHandler.onWebSocketWillSendHandshakeRequest(event);
+    };
 
-        this.client.on("Network.webSocketWillSendHandshakeRequest", (event) => {
-            this.eventHandler.onWebSocketWillSendHandshakeRequest(event);
-        });
+    private readonly onWebSocketHandshakeResponseReceived: EventHandler = (event) => {
+        this.cdpEventHandler.onWebSocketHandshakeResponseReceived(event);
+    };
 
-        this.client.on("Network.webSocketHandshakeResponseReceived", (event) => {
-            this.eventHandler.onWebSocketHandshakeResponseReceived(event);
-        });
+    private readonly onWebSocketFrameSent: EventHandler = (event) => {
+        this.cdpEventHandler.onWebSocketFrameSent(event);
+    };
 
-        this.client.on("Network.webSocketFrameSent", (event) => {
-            this.eventHandler.onWebSocketFrameSent(event);
-        });
+    private readonly onWebSocketFrameReceived: EventHandler = (event) => {
+        this.cdpEventHandler.onWebSocketFrameReceived(event);
+    };
 
-        this.client.on("Network.webSocketFrameReceived", (event) => {
-            this.eventHandler.onWebSocketFrameReceived(event);
-        });
+    subscribe(): void {
+        if (this.subscribed) {
+            return;
+        }
+        this.client.on("Network.requestWillBeSent", this.onRequestWillBeSent);
+        this.client.on("Network.responseReceived", this.onResponseReceived);
+        this.client.on("Network.loadingFinished", this.onLoadingFinished);
+        this.client.on("Network.loadingFailed", this.onLoadingFailed);
+        this.client.on("Network.webSocketCreated", this.onWebSocketCreated);
+        this.client.on("Network.webSocketWillSendHandshakeRequest", this.onWebSocketWillSendHandshakeRequest);
+        this.client.on("Network.webSocketHandshakeResponseReceived", this.onWebSocketHandshakeResponseReceived);
+        this.client.on("Network.webSocketFrameSent", this.onWebSocketFrameSent);
+        this.client.on("Network.webSocketFrameReceived", this.onWebSocketFrameReceived);
+        this.subscribed = true;
+    }
+
+    unsubscribe(): void {
+        if (!this.subscribed) {
+            return;
+        }
+        this.client.off("Network.requestWillBeSent", this.onRequestWillBeSent);
+        this.client.off("Network.responseReceived", this.onResponseReceived);
+        this.client.off("Network.loadingFinished", this.onLoadingFinished);
+        this.client.off("Network.loadingFailed", this.onLoadingFailed);
+        this.client.off("Network.webSocketCreated", this.onWebSocketCreated);
+        this.client.off("Network.webSocketWillSendHandshakeRequest", this.onWebSocketWillSendHandshakeRequest);
+        this.client.off("Network.webSocketHandshakeResponseReceived", this.onWebSocketHandshakeResponseReceived);
+        this.client.off("Network.webSocketFrameSent", this.onWebSocketFrameSent);
+        this.client.off("Network.webSocketFrameReceived", this.onWebSocketFrameReceived);
+        this.subscribed = false;
+    }
+
+    get isSubscribed(): boolean {
+        return this.subscribed;
     }
 
     get isAcceptingNewRequests(): boolean {

@@ -33,6 +33,7 @@ export type {
 } from "./har/HarTypes.js";
 
 export type {
-    EventHandler,
-    CdpSession
+    CdpEventHandler,
+    CdpSession,
+    EventHandler
 } from "./recorder/CdpTrafficInterceptor.js";
