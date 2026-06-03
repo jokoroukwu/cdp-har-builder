@@ -1,6 +1,6 @@
-export { CdpNetworkRecorder } from "./recorder/CdpNetworkRecorder.js";
-export { CdpTrafficInterceptor } from "./recorder/CdpTrafficInterceptor.js";
-export { HarBuilder } from "./har/HarBuilder.js";
+export {CdpNetworkRecorder} from "./recorder/CdpNetworkRecorder.js";
+export {CdpTrafficInterceptor} from "./recorder/CdpTrafficInterceptor.js";
+export {HarBuilder} from "./har/HarBuilder.js";
 
 export type {
     RequestState,
@@ -31,3 +31,8 @@ export type {
     HarContent,
     HarTimings,
 } from "./har/HarTypes.js";
+
+export type {
+    EventHandler,
+    CdpSession
+} from "./recorder/CdpTrafficInterceptor.js";

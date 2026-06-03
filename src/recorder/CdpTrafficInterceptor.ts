@@ -11,7 +11,7 @@ import type {
 } from "./CdpNetworkTypes.js";
 
 
-type CdpSession = {
+export type CdpSession = {
     send(method: string, params?: object): Promise<any>
     on(event: string, handler: (payload: any) => void): void
     off?(event: string, handler: (payload: any) => void): void
