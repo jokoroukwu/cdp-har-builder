@@ -1,6 +1,6 @@
 {
   "name": "cdp-har-builder",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Build HAR files from Chromium DevTools Protocol network events",
   "type": "module",
   "main": "./dist/index.js",
