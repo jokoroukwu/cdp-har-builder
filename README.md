@@ -31,7 +31,7 @@ import {
 // send(method, params)
 // on(event, handler)
 // off(event, handler) optional
-
+await cdpSession.send("Network.enable");
 const recorder = new CdpNetworkRecorder();
 const interceptor = new CdpTrafficInterceptor(cdpSession, recorder);
 
