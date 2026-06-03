@@ -195,6 +195,12 @@ export class CdpNetworkRecorder {
         }
     }
 
+    clear(): void {
+        this.activeRequests.clear();
+        this.completedRequests.clear();
+        this.failedRequests.clear();
+    }
+
     getActiveRequests(): RequestState[] {
         return [...this.activeRequests.values()];
     }
